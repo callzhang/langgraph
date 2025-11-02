@@ -425,10 +425,15 @@ def test_subgraph_invoked_with_config_preserves_runtime() -> None:
             last_foo = runtime.context.username
         return {"foo": "hello " + str(last_foo)}
 
-    def invoke_subgraph(state: State, runtime: Runtime[Context], config: RunnableConfig):
+    def invoke_subgraph(
+        state: State, runtime: Runtime[Context], config: RunnableConfig
+    ):
         # Before the fix, users had to manually call patch_configurable here
         # Now it should work automatically when passing config with thread_id
-        new_config = {**config, "configurable": {**config.get("configurable", {}), "thread_id": "1"}}
+        new_config = {
+            **config,
+            "configurable": {**config.get("configurable", {}), "thread_id": "1"},
+        }
         return subgraph.invoke(input=state, config=new_config)
 
     store = InMemoryStore()
@@ -441,12 +446,12 @@ def test_subgraph_invoked_with_config_preserves_runtime() -> None:
 
     context = Context(username="Alice")
     result = graph.invoke(input={"foo": "world"}, context=context)
-    
+
     # The flow is:
     # 1. main_node: returns {'foo': 'hello Alice'} (from context)
     # 2. invoke_subgraph: subgraph receives {'foo': 'hello Alice'}, returns {'foo': 'hi! hello Alice'}
     assert result == {"foo": "hi! hello Alice"}
-    
+
     # Verify store was updated by subgraph
     stored_value = store.get(("subgraph", "1"), "foo")
     assert stored_value is not None
